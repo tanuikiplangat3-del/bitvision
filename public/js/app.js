@@ -82,9 +82,24 @@ const App = {
         password: document.getElementById('setup-password').value,
       });
       this.user = user;
-      UI.toast('Account created. Welcome to Bitvision!');
-      this.showApp();
-    } catch (err) { errBox.textContent = err.message; errBox.hidden = false; }
+      // Reload so the freshly-set auth cookie is used from a clean state.
+      // (Avoids a race where the dashboard loads before the cookie is applied.)
+      location.hash = '#dashboard';
+      location.reload();
+    } catch (err) {
+      // If setup was already completed (e.g. account made on a previous click),
+      // send the user straight to the sign-in screen instead of stranding them.
+      if (err.status === 409) {
+        this.show('login-screen');
+        const prefill = document.getElementById('setup-username').value.trim();
+        if (prefill) document.getElementById('login-username').value = prefill;
+        const li = document.getElementById('login-error');
+        li.textContent = 'Your account already exists — please sign in.';
+        li.hidden = false;
+        return;
+      }
+      errBox.textContent = err.message; errBox.hidden = false;
+    }
   },
 
   async doLogin(e) {
@@ -97,7 +112,9 @@ const App = {
         document.getElementById('login-password').value
       );
       this.user = user;
-      this.showApp();
+      // Reload so the freshly-set auth cookie is used from a clean state.
+      location.hash = '#dashboard';
+      location.reload();
     } catch (err) { errBox.textContent = err.message; errBox.hidden = false; }
   },
 
