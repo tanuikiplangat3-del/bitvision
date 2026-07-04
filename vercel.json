@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    { "source": "/api/auth/:action", "destination": "/api/auth?action=:action" },
+    { "source": "/api/stats/:action", "destination": "/api/stats?action=:action" },
+    { "source": "/api/clients/:id/:action", "destination": "/api/clients?id=:id&action=:action" },
+    { "source": "/api/clients/:id", "destination": "/api/clients?id=:id" },
+    { "source": "/api/admins/:id", "destination": "/api/admins?id=:id" }
+  ]
+}
