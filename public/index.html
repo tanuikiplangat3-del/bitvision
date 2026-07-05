@@ -10,39 +10,21 @@
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <!-- First-run setup -->
-  <div id="setup-screen" class="auth-screen" hidden>
+  <!-- Auth: one screen with Sign in / Sign up tabs (always both available) -->
+  <div id="auth-screen" class="auth-screen" hidden>
     <div class="auth-card">
       <div class="brand">
         <div class="logo-mark" aria-hidden="true"><span></span><span></span><span></span></div>
         <div><h1>Bitvision</h1><p class="brand-sub">WiFi Management System</p></div>
       </div>
-      <h2 class="auth-title">Welcome — set up your account</h2>
-      <p class="auth-note">Create the owner account. This is your super admin and can do everything.</p>
-      <form id="setup-form">
-        <label>Your name
-          <input type="text" id="setup-name" placeholder="e.g. James Owner" required />
-        </label>
-        <label>Username
-          <input type="text" id="setup-username" autocomplete="username" placeholder="Choose a username" required />
-        </label>
-        <label>Password
-          <input type="password" id="setup-password" autocomplete="new-password" placeholder="At least 6 characters" required />
-        </label>
-        <div id="setup-error" class="form-error" hidden></div>
-        <button type="submit" class="btn btn-primary btn-block">Create account & sign in</button>
-      </form>
-    </div>
-  </div>
 
-  <!-- Login -->
-  <div id="login-screen" class="auth-screen" hidden>
-    <div class="auth-card">
-      <div class="brand">
-        <div class="logo-mark" aria-hidden="true"><span></span><span></span><span></span></div>
-        <div><h1>Bitvision</h1><p class="brand-sub">WiFi Management System</p></div>
+      <div class="auth-tabs">
+        <button type="button" id="tab-signin" class="auth-tab active">Sign in</button>
+        <button type="button" id="tab-signup" class="auth-tab">Sign up</button>
       </div>
-      <form id="login-form">
+
+      <!-- SIGN IN -->
+      <form id="login-form" class="auth-panel">
         <label>Username
           <input type="text" id="login-username" autocomplete="username" required />
         </label>
@@ -51,6 +33,22 @@
         </label>
         <div id="login-error" class="form-error" hidden></div>
         <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+      </form>
+
+      <!-- SIGN UP (creates the first owner account) -->
+      <form id="setup-form" class="auth-panel" hidden>
+        <p class="auth-note">Create the owner account. This is your super admin and can do everything. (Only works for the very first account.)</p>
+        <label>Your name
+          <input type="text" id="setup-name" placeholder="e.g. James Owner" />
+        </label>
+        <label>Username
+          <input type="text" id="setup-username" autocomplete="username" placeholder="Choose a username" />
+        </label>
+        <label>Password
+          <input type="password" id="setup-password" autocomplete="new-password" placeholder="At least 6 characters" />
+        </label>
+        <div id="setup-error" class="form-error" hidden></div>
+        <button type="submit" class="btn btn-primary btn-block">Create account &amp; sign in</button>
       </form>
     </div>
   </div>

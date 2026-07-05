@@ -25,6 +25,9 @@ const App = {
     document.getElementById('menu-toggle').addEventListener('click', () => {
       document.querySelector('.sidebar').classList.toggle('open');
     });
+    // Sign in / Sign up tab switching
+    document.getElementById('tab-signin').addEventListener('click', () => this.showTab('signin'));
+    document.getElementById('tab-signup').addEventListener('click', () => this.showTab('signup'));
     window.addEventListener('hashchange', () => this.handleRoute());
 
     // Already signed in? (retry once in case of a cold database start)
@@ -34,33 +37,32 @@ const App = {
         this.user = user;
         return this.showApp();
       } catch (err) {
-        // 401 means "genuinely not signed in" — stop retrying and move on.
-        if (err && err.status === 401) break;
-        // Any other error is likely a cold start; wait briefly and retry.
-        await new Promise((r) => setTimeout(r, 700));
+        if (err && err.status === 401) break; // genuinely not signed in
+        await new Promise((r) => setTimeout(r, 700)); // cold start, retry
       }
     }
 
-    // Not signed in — do we need first-run setup, or just login?
-    // We only show the setup screen if we are CONFIDENT no admins exist.
-    // On any uncertainty we default to the login screen, so a returning
-    // owner is never wrongly sent back to setup.
+    // Not signed in. Show the auth screen. Default tab = Sign in.
+    // If this is a brand-new install (no admins yet), open the Sign up tab.
+    this.show('auth-screen');
     let needsSetup = false;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const r = await API.authStatus();
-        needsSetup = !!r.needsSetup;
-        break;
-      } catch (err) {
-        needsSetup = false; // default to login on error
-        await new Promise((res) => setTimeout(res, 700));
-      }
-    }
-    this.show(needsSetup ? 'setup-screen' : 'login-screen');
+    try { needsSetup = !!(await API.authStatus()).needsSetup; } catch (_) {}
+    this.showTab(needsSetup ? 'signup' : 'signin');
+  },
+
+  // Toggle between the Sign in and Sign up panels.
+  showTab(which) {
+    const signin = which === 'signin';
+    document.getElementById('tab-signin').classList.toggle('active', signin);
+    document.getElementById('tab-signup').classList.toggle('active', !signin);
+    document.getElementById('login-form').hidden = !signin;
+    document.getElementById('setup-form').hidden = signin;
+    document.getElementById('login-error').hidden = true;
+    document.getElementById('setup-error').hidden = true;
   },
 
   show(id) {
-    ['setup-screen', 'login-screen', 'app'].forEach((s) => {
+    ['auth-screen', 'app'].forEach((s) => {
       document.getElementById(s).hidden = (s !== id);
     });
   },
@@ -105,7 +107,7 @@ const App = {
       // If setup was already completed (e.g. account made on a previous click),
       // send the user straight to the sign-in screen instead of stranding them.
       if (err.status === 409) {
-        this.show('login-screen');
+        this.showTab('signin');
         const prefill = document.getElementById('setup-username').value.trim();
         if (prefill) document.getElementById('login-username').value = prefill;
         const li = document.getElementById('login-error');
@@ -137,7 +139,8 @@ const App = {
     try { await API.logout(); } catch (_) {}
     this.user = null;
     location.hash = '';
-    this.show('login-screen');
+    this.show('auth-screen');
+    this.showTab('signin');
   },
 
   handleRoute() {
