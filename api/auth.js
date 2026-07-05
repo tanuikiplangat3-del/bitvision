@@ -31,7 +31,7 @@ module.exports = async function handler(req, res) {
     await logActivity(admin.id, admin.username, 'setup', 'First super admin created.');
     const token = signToken(admin);
     setAuthCookie(res, token);
-    return res.status(201).json({ user: admin });
+    return res.status(201).json({ user: admin, token });
   }
 
   // ---- Tells the frontend whether setup is needed ----
@@ -56,9 +56,11 @@ module.exports = async function handler(req, res) {
     }
     await sql`UPDATE admins SET last_login = now() WHERE id = ${admin.id}`;
     await logActivity(admin.id, admin.username, 'login', null);
-    setAuthCookie(res, signToken(admin));
+    const token = signToken(admin);
+    setAuthCookie(res, token);
     return res.status(200).json({
       user: { id: admin.id, username: admin.username, full_name: admin.full_name, role: admin.role },
+      token,
     });
   }
 

@@ -1,8 +1,23 @@
 'use strict';
 
 const API = {
+  // Token-based auth (no reliance on cookies surviving a reload).
+  token: (function () {
+    try { return localStorage.getItem('bv_token') || null; } catch (_) { return null; }
+  })(),
+
+  setToken(t) {
+    this.token = t || null;
+    try {
+      if (t) localStorage.setItem('bv_token', t);
+      else localStorage.removeItem('bv_token');
+    } catch (_) {}
+  },
+
   async request(method, url, body) {
-    const opts = { method, headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin' };
+    const headers = { 'Content-Type': 'application/json' };
+    if (this.token) headers['Authorization'] = 'Bearer ' + this.token;
+    const opts = { method, headers, credentials: 'same-origin' };
     if (body !== undefined) opts.body = JSON.stringify(body);
     const res = await fetch(url, opts);
     let data = {};
@@ -20,9 +35,21 @@ const API = {
   del(u) { return this.request('DELETE', u); },
 
   authStatus() { return this.get('/api/auth/status'); },
-  setup(data) { return this.post('/api/auth/setup', data); },
-  login(username, password) { return this.post('/api/auth/login', { username, password }); },
-  logout() { return this.post('/api/auth/logout'); },
+  async setup(data) {
+    const r = await this.post('/api/auth/setup', data);
+    if (r.token) this.setToken(r.token);
+    return r;
+  },
+  async login(username, password) {
+    const r = await this.post('/api/auth/login', { username, password });
+    if (r.token) this.setToken(r.token);
+    return r;
+  },
+  async logout() {
+    try { await this.post('/api/auth/logout'); } catch (_) {}
+    this.setToken(null);
+    return { ok: true };
+  },
   me() { return this.get('/api/auth/me'); },
 
   clients(params = {}) {

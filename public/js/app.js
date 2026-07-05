@@ -92,6 +92,8 @@ const App = {
     e.preventDefault();
     const errBox = document.getElementById('setup-error');
     errBox.hidden = true;
+    const btn = e.target.querySelector('button[type=submit]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
     try {
       const { user } = await API.setup({
         full_name: document.getElementById('setup-name').value.trim(),
@@ -99,13 +101,11 @@ const App = {
         password: document.getElementById('setup-password').value,
       });
       this.user = user;
-      // Reload so the freshly-set auth cookie is used from a clean state.
-      // (Avoids a race where the dashboard loads before the cookie is applied.)
+      // Token stored by API.setup(). Go straight to the app — no reload.
       location.hash = '#dashboard';
-      location.reload();
+      this.showApp();
     } catch (err) {
-      // If setup was already completed (e.g. account made on a previous click),
-      // send the user straight to the sign-in screen instead of stranding them.
+      // Setup already done: switch to the Sign in tab so they can log in.
       if (err.status === 409) {
         this.showTab('signin');
         const prefill = document.getElementById('setup-username').value.trim();
@@ -116,6 +116,8 @@ const App = {
         return;
       }
       errBox.textContent = err.message; errBox.hidden = false;
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Create account & sign in'; }
     }
   },
 
@@ -123,16 +125,22 @@ const App = {
     e.preventDefault();
     const errBox = document.getElementById('login-error');
     errBox.hidden = true;
+    const btn = e.target.querySelector('button[type=submit]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
     try {
       const { user } = await API.login(
         document.getElementById('login-username').value.trim(),
         document.getElementById('login-password').value
       );
       this.user = user;
-      // Reload so the freshly-set auth cookie is used from a clean state.
+      // Token is now stored by API.login(). Go straight to the app — no reload.
       location.hash = '#dashboard';
-      location.reload();
-    } catch (err) { errBox.textContent = err.message; errBox.hidden = false; }
+      this.showApp();
+    } catch (err) {
+      errBox.textContent = err.message; errBox.hidden = false;
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Sign in'; }
+    }
   },
 
   async doLogout() {
