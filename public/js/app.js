@@ -32,21 +32,27 @@ const App = {
 
     // Already signed in? (retry once in case of a cold database start)
     for (let attempt = 0; attempt < 2; attempt++) {
+      // If the user has logged in via the form while this loop was waiting,
+      // stop immediately — never overwrite an active session.
+      if (this.user) return;
       try {
         const { user } = await API.me();
+        if (this.user) return; // logged in during the await
         this.user = user;
         return this.showApp();
       } catch (err) {
+        if (this.user) return;
         if (err && err.status === 401) break; // genuinely not signed in
         await new Promise((r) => setTimeout(r, 700)); // cold start, retry
       }
     }
 
-    // Not signed in. Show the auth screen. Default tab = Sign in.
-    // If this is a brand-new install (no admins yet), open the Sign up tab.
+    // Still not signed in after checks. Show the auth screen.
+    if (this.user) return; // final guard
     this.show('auth-screen');
     let needsSetup = false;
     try { needsSetup = !!(await API.authStatus()).needsSetup; } catch (_) {}
+    if (this.user) return;
     this.showTab(needsSetup ? 'signup' : 'signin');
   },
 
