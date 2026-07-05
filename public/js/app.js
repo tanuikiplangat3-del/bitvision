@@ -158,6 +158,13 @@ const App = {
   },
 
   handleRoute() {
+    // Guard: if we're not signed in, do nothing. A hashchange event can fire
+    // before this.user is set; without this guard, this.user.role throws and
+    // the whole render aborts — leaving the user stuck on the login screen.
+    if (!this.user) return;
+    // Guard: only route when the app screen is actually showing.
+    if (document.getElementById('app').hidden) return;
+
     let key = (location.hash || '#dashboard').slice(1);
     if (!this.ACCESS[key] || !this.ACCESS[key].includes(this.user.role)) key = 'dashboard';
     this.route = key;
