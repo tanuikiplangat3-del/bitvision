@@ -27,21 +27,36 @@ const App = {
     });
     window.addEventListener('hashchange', () => this.handleRoute());
 
-    // Already signed in?
-    try {
-      const { user } = await API.me();
-      this.user = user;
-      return this.showApp();
-    } catch (_) {}
+    // Already signed in? (retry once in case of a cold database start)
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const { user } = await API.me();
+        this.user = user;
+        return this.showApp();
+      } catch (err) {
+        // 401 means "genuinely not signed in" — stop retrying and move on.
+        if (err && err.status === 401) break;
+        // Any other error is likely a cold start; wait briefly and retry.
+        await new Promise((r) => setTimeout(r, 700));
+      }
+    }
 
     // Not signed in — do we need first-run setup, or just login?
-    try {
-      const { needsSetup } = await API.authStatus();
-      if (needsSetup) this.show('setup-screen');
-      else this.show('login-screen');
-    } catch (_) {
-      this.show('login-screen');
+    // We only show the setup screen if we are CONFIDENT no admins exist.
+    // On any uncertainty we default to the login screen, so a returning
+    // owner is never wrongly sent back to setup.
+    let needsSetup = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const r = await API.authStatus();
+        needsSetup = !!r.needsSetup;
+        break;
+      } catch (err) {
+        needsSetup = false; // default to login on error
+        await new Promise((res) => setTimeout(res, 700));
+      }
     }
+    this.show(needsSetup ? 'setup-screen' : 'login-screen');
   },
 
   show(id) {
